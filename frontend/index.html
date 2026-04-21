@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XAI StudyMate — Student Placement Predictor</title>
+    <meta name="description" content="AI-powered explainable student placement prediction with SHAP analysis and personalized study plans." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        /* ── reset & base ─────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg:        #0f0f1a;
+            --surface:   #1a1a2e;
+            --surface-2: #24243e;
+            --border:    #2d2d4a;
+            --text:      #e2e2f0;
+            --text-dim:  #8888aa;
+            --accent:    #6c63ff;
+            --accent-2:  #a78bfa;
+            --green:     #22c55e;
+            --red:       #ef4444;
+            --yellow:    #eab308;
+            --orange:    #f97316;
+            --radius:    12px;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        a { color: var(--accent-2); text-decoration: none; }
+
+        /* ── nav ──────────────────────────────────────────────────── */
+        nav {
+            position: sticky; top: 0; z-index: 50;
+            display: flex; align-items: center; gap: 1.5rem;
+            padding: .75rem 2rem;
+            background: rgba(15,15,26,.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .logo {
+            font-weight: 800; font-size: 1.25rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        nav .tabs { display: flex; gap: .25rem; margin-left: auto; }
+        nav .tabs button {
+            background: transparent; border: none; color: var(--text-dim);
+            padding: .5rem 1rem; border-radius: 8px; font-size: .875rem;
+            cursor: pointer; font-family: inherit; font-weight: 500;
+            transition: all .2s;
+        }
+        nav .tabs button:hover { color: var(--text); background: var(--surface); }
+        nav .tabs button.active {
+            color: #fff; background: var(--accent);
+        }
+
+        /* ── layout ──────────────────────────────────────────────── */
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .page { display: none; animation: fadeIn .3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+        h1 { font-size: 2rem; font-weight: 800; margin-bottom: .5rem; }
+        h2 { font-size: 1.4rem; font-weight: 700; margin: 1.5rem 0 .75rem; }
+        .subtitle { color: var(--text-dim); margin-bottom: 2rem; }
+
+        /* ── card ─────────────────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            transition: border-color .2s;
+        }
+        .card:hover { border-color: var(--accent); }
+
+        /* ── form ─────────────────────────────────────────────────── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label {
+            font-size: .8rem; font-weight: 600; color: var(--text-dim);
+            margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .5px;
+        }
+        .form-group input, .form-group select {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .55rem .75rem;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: .9rem;
+            transition: border-color .2s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(108,99,255,.15);
+        }
+
+        /* ── buttons ──────────────────────────────────────────────── */
+        .btn {
+            display: inline-flex; align-items: center; gap: .5rem;
+            padding: .65rem 1.5rem;
+            border: none; border-radius: 10px;
+            font-family: inherit; font-weight: 600; font-size: .95rem;
+            cursor: pointer; transition: all .2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,.35); }
+        .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--border); color: var(--text);
+        }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ── results ──────────────────────────────────────────────── */
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: var(--surface-2);
+            border-radius: var(--radius);
+            padding: 1.15rem;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-size: 1.75rem; font-weight: 800; margin-bottom: .2rem;
+        }
+        .stat-card .label { font-size: .8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+
+        .risk-critical .value { color: var(--red); }
+        .risk-high .value     { color: var(--orange); }
+        .risk-medium .value   { color: var(--yellow); }
+        .risk-low .value      { color: var(--green); }
+        .risk-minimal .value  { color: var(--green); }
+
+        .placed-yes { color: var(--green); }
+        .placed-no  { color: var(--red); }
+
+        /* ── SHAP bar chart ──────────────────────────────────────── */
+        .shap-bar {
+            display: flex; align-items: center; gap: .75rem;
+            padding: .5rem 0; border-bottom: 1px solid var(--border);
+        }
+        .shap-bar:last-child { border-bottom: none; }
+        .shap-bar .feat-name { width: 160px; font-size: .85rem; flex-shrink: 0; text-align: right; color: var(--text-dim); }
+        .shap-bar .bar-wrapper { flex: 1; position: relative; height: 22px; }
+        .shap-bar .bar {
+            position: absolute; top: 0; height: 100%;
+            border-radius: 4px;
+            transition: width .5s ease;
+        }
+        .shap-bar .bar.positive { background: var(--green); left: 50%; }
+        .shap-bar .bar.negative { background: var(--red); right: 50%; }
+        .shap-bar .center-line {
+            position: absolute; left: 50%; top: -2px;
+            width: 1px; height: calc(100% + 4px);
+            background: var(--border);
+        }
+        .shap-bar .val { width: 60px; font-size: .8rem; text-align: right; font-weight: 500; }
+
+        /* ── study plan ──────────────────────────────────────────── */
+        .plan-item {
+            border-left: 4px solid var(--accent);
+            padding: .75rem 1rem;
+            margin-bottom: .75rem;
+            background: var(--surface-2);
+            border-radius: 0 var(--radius) var(--radius) 0;
+        }
+        .plan-item.high   { border-left-color: var(--red); }
+        .plan-item.medium { border-left-color: var(--yellow); }
+        .plan-item.low    { border-left-color: var(--green); }
+        .plan-item .pi-header { display: flex; justify-content: space-between; align-items: center; }
+        .plan-item .pi-title  { font-weight: 700; font-size: .95rem; }
+        .plan-item .pi-badge  {
+            font-size: .7rem; font-weight: 700; text-transform: uppercase;
+            padding: .15rem .5rem; border-radius: 99px;
+        }
+        .plan-item.high .pi-badge   { background: rgba(239,68,68,.15); color: var(--red); }
+        .plan-item.medium .pi-badge { background: rgba(234,179,8,.15); color: var(--yellow); }
+        .plan-item.low .pi-badge    { background: rgba(34,197,94,.15); color: var(--green); }
+        .plan-item .pi-desc { font-size: .85rem; color: var(--text-dim); margin-top: .35rem; }
+        .plan-item .pi-meta { display: flex; gap: 1rem; margin-top: .5rem; font-size: .8rem; color: var(--text-dim); }
+
+        /* ── timeline ─────────────────────────────────────────────── */
+        .timeline { position: relative; padding-left: 2rem; }
+        .timeline::before {
+            content: ''; position: absolute; left: .65rem; top: 0; bottom: 0;
+            width: 2px; background: var(--border);
+        }
+        .tl-item { position: relative; padding-bottom: 1.25rem; }
+        .tl-item::before {
+            content: ''; position: absolute; left: -1.65rem; top: .3rem;
+            width: 12px; height: 12px; border-radius: 50%;
+            background: var(--accent); border: 2px solid var(--bg);
+        }
+        .tl-item.checkpoint::before { background: var(--green); width: 14px; height: 14px; left: -1.7rem; }
+        .tl-item .tl-week { font-weight: 700; font-size: .9rem; }
+        .tl-item .tl-title { color: var(--text-dim); font-size: .85rem; }
+        .tl-item .tl-tasks { margin-top: .25rem; font-size: .8rem; color: var(--text-dim); }
+
+        /* ── chat ─────────────────────────────────────────────────── */
+        .chat-container { display: flex; flex-direction: column; height: 60vh; }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 1rem;
+            display: flex; flex-direction: column; gap: .75rem;
+        }
+        .msg { max-width: 80%; padding: .75rem 1rem; border-radius: 16px; font-size: .9rem; line-height: 1.5; }
+        .msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg.bot  { background: var(--surface-2); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-suggestions { display: flex; flex-wrap: wrap; gap: .5rem; padding: .5rem 1rem; }
+        .chat-suggestions button {
+            background: var(--surface-2); border: 1px solid var(--border);
+            color: var(--text-dim); padding: .4rem .8rem; border-radius: 99px;
+            font-size: .8rem; cursor: pointer; font-family: inherit;
+            transition: all .2s;
+        }
+        .chat-suggestions button:hover { border-color: var(--accent); color: var(--text); }
+        .chat-input {
+            display: flex; gap: .5rem; padding: .75rem;
+            border-top: 1px solid var(--border);
+        }
+        .chat-input input {
+            flex: 1; background: var(--surface-2); border: 1px solid var(--border);
+            color: var(--text); padding: .6rem 1rem; border-radius: 10px;
+            font-family: inherit; font-size: .9rem;
+        }
+        .chat-input input:focus { outline: none; border-color: var(--accent); }
+
+        /* ── feature importance chart ─────────────────────────────── */
+        .fi-bar {
+            display: flex; align-items: center; gap: .75rem;
+            padding: .4rem 0; border-bottom: 1px solid var(--border);
+        }
+        .fi-bar:last-child { border-bottom: none; }
+        .fi-bar .fi-name { width: 160px; font-size: .85rem; color: var(--text-dim); text-align: right; flex-shrink: 0; }
+        .fi-bar .fi-fill {
+            height: 20px; border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            transition: width .6s ease;
+        }
+        .fi-bar .fi-val { font-size: .8rem; font-weight: 500; width: 50px; }
+
+        /* ── metrics ──────────────────────────────────────────────── */
+        .metrics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: .75rem;
+        }
+        .metric-chip {
+            background: var(--surface-2); border-radius: 10px;
+            padding: .75rem; text-align: center;
+        }
+        .metric-chip .mv  { font-size: 1.4rem; font-weight: 800; color: var(--accent-2); }
+        .metric-chip .ml  { font-size: .7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+
+        /* ── spinner ──────────────────────────────────────────────── */
+        .spinner {
+            display: inline-block; width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin .6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── responsive ──────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr 1fr; }
+            .result-grid { grid-template-columns: 1fr 1fr; }
+            nav { padding: .75rem 1rem; }
+            .container { padding: 1.5rem 1rem; }
+            .shap-bar .feat-name, .fi-bar .fi-name { width: 100px; font-size: .75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────── -->
+<nav>
+    <div class="logo">🎓 XAI StudyMate</div>
+    <div class="tabs">
+        <button class="active" onclick="showPage('predict')" id="tab-predict">Predict</button>
+        <button onclick="showPage('explain')" id="tab-explain">Explain</button>
+        <button onclick="showPage('plan')" id="tab-plan">Study Plan</button>
+        <button onclick="showPage('chat')" id="tab-chat">AI Tutor</button>
+        <button onclick="showPage('model')" id="tab-model">Model Info</button>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- ─── PREDICT PAGE ─────────────────────────────────────────── -->
+    <div class="page active" id="page-predict">
+        <h1>Placement Predictor</h1>
+        <p class="subtitle">Enter your academic profile to predict your placement outcome using Explainable AI.</p>
+
+        <form class="card" id="student-form" onsubmit="return false;">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="inp-gender">Gender</label>
+                    <select id="inp-gender">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="inp-age">Age</label>
+                    <input id="inp-age" type="number" min="18" max="30" value="21" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-degree">Degree</label>
+                    <select id="inp-degree">
+                        <option value="BTech">BTech</option>
+                        <option value="BE">BE</option>
+                        <option value="BSc">BSc</option>
+                        <option value="BCA">BCA</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="inp-branch">Branch</label>
+                    <select id="inp-branch">
+                        <option value="CS">CS</option>
+                        <option value="IT">IT</option>
+                        <option value="DS">DS</option>
+                        <option value="AI">AI</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Mechanical">Mechanical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="inp-cgpa">CGPA (0-10)</label>
+                    <input id="inp-cgpa" type="number" step="0.01" min="0" max="10" value="7.5" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-backlogs">Backlogs</label>
+                    <input id="inp-backlogs" type="number" min="0" max="10" value="0" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-internships">Internships</label>
+                    <input id="inp-internships" type="number" min="0" max="5" value="1" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-certifications">Certifications</label>
+                    <input id="inp-certifications" type="number" min="0" max="10" value="2" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-coding">Coding Skills (0-10)</label>
+                    <input id="inp-coding" type="number" min="0" max="10" value="6" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-comm">Communication (0-10)</label>
+                    <input id="inp-comm" type="number" min="0" max="10" value="6" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-aptitude">Aptitude Score (0-100)</label>
+                    <input id="inp-aptitude" type="number" min="0" max="100" value="65" />
+                </div>
+                <div class="form-group">
+                    <label for="inp-projects">Projects</label>
+                    <input id="inp-projects" type="number" min="0" max="10" value="2" />
+                </div>
+            </div>
+            <div style="margin-top:1.25rem; display:flex; gap:.75rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" type="button" onclick="doPrediction()" id="btn-predict">
+                    🔮 Predict Placement
+                </button>
+                <button class="btn btn-outline" type="button" onclick="doExplain()" id="btn-explain">
+                    🔍 Explain with SHAP
+                </button>
+                <button class="btn btn-outline" type="button" onclick="doStudyPlan()" id="btn-plan">
+                    📋 Get Study Plan
+                </button>
+            </div>
+        </form>
+
+        <div id="predict-result" style="display:none;"></div>
+    </div>
+
+    <!-- ─── EXPLAIN PAGE ─────────────────────────────────────────── -->
+    <div class="page" id="page-explain">
+        <h1>SHAP Explanation</h1>
+        <p class="subtitle">See how each feature in your profile impacts the placement prediction.</p>
+        <div id="explain-result">
+            <p style="color:var(--text-dim);">Fill in your profile on the <strong>Predict</strong> tab and click <strong>"Explain with SHAP"</strong> to see results here.</p>
+        </div>
+    </div>
+
+    <!-- ─── STUDY PLAN PAGE ──────────────────────────────────────── -->
+    <div class="page" id="page-plan">
+        <h1>Personalized Study Plan</h1>
+        <p class="subtitle">AI-generated improvement roadmap based on your profile analysis.</p>
+        <div id="plan-result">
+            <p style="color:var(--text-dim);">Click <strong>"Get Study Plan"</strong> on the Predict tab to generate your personalized plan.</p>
+        </div>
+    </div>
+
+    <!-- ─── CHAT PAGE ────────────────────────────────────────────── -->
+    <div class="page" id="page-chat">
+        <h1>AI Study Tutor</h1>
+        <p class="subtitle">Ask questions about placement preparation, skills, and career advice.</p>
+        <div class="card chat-container" id="chat-box">
+            <div class="chat-messages" id="chat-messages">
+                <div class="msg bot">
+                    Hello! 👋 I'm your XAI StudyMate assistant. Ask me about placement preparation, skill improvement, or anything related to your academic profile.
+                </div>
+            </div>
+            <div class="chat-suggestions" id="chat-suggestions">
+                <button onclick="sendChat('How can I improve my placement chances?')">How to improve chances?</button>
+                <button onclick="sendChat('Tips for coding skills')">Coding tips</button>
+                <button onclick="sendChat('How to prepare for aptitude?')">Aptitude prep</button>
+            </div>
+            <div class="chat-input">
+                <input id="chat-inp" placeholder="Type your question…" onkeydown="if(event.key==='Enter')sendChat()" />
+                <button class="btn btn-primary" onclick="sendChat()" style="padding:.6rem 1.2rem;">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MODEL INFO PAGE ──────────────────────────────────────── -->
+    <div class="page" id="page-model">
+        <h1>Model Information</h1>
+        <p class="subtitle">Performance metrics and global feature importances of the trained ML model.</p>
+        <div id="model-result"><p style="color:var(--text-dim);">Loading model info…</p></div>
+    </div>
+
+</div>
+
+<script>
+const API = 'http://localhost:5000';
+
+// ── Tab navigation ─────────────────────────────────────────────────
+function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+
+    if (name === 'model') loadModelInfo();
+}
+
+// ── Collect form data ──────────────────────────────────────────────
+function getFormData() {
+    return {
+        gender:               document.getElementById('inp-gender').value,
+        age:                  parseInt(document.getElementById('inp-age').value),
+        degree:               document.getElementById('inp-degree').value,
+        branch:               document.getElementById('inp-branch').value,
+        cgpa:                 parseFloat(document.getElementById('inp-cgpa').value),
+        backlogs:             parseInt(document.getElementById('inp-backlogs').value),
+        internships:          parseInt(document.getElementById('inp-internships').value),
+        certifications:       parseInt(document.getElementById('inp-certifications').value),
+        coding_skills:        parseInt(document.getElementById('inp-coding').value),
+        communication_skills: parseInt(document.getElementById('inp-comm').value),
+        aptitude_score:       parseInt(document.getElementById('inp-aptitude').value),
+        projects:             parseInt(document.getElementById('inp-projects').value),
+    };
+}
+
+// ── API helpers ────────────────────────────────────────────────────
+async function apiPost(path, body) {
+    const res = await fetch(API + path, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+async function apiGet(path) {
+    const res = await fetch(API + path);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+
+// ── Predict ────────────────────────────────────────────────────────
+async function doPrediction() {
+    const btn = document.getElementById('btn-predict');
+    const box = document.getElementById('predict-result');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Predicting…';
+    try {
+        const data = await apiPost('/predict', getFormData());
+        box.style.display = 'block';
+        const riskCls = 'risk-' + data.risk_level;
+        box.innerHTML = `
+            <div class="result-grid">
+                <div class="stat-card">
+                    <div class="value ${data.placed ? 'placed-yes' : 'placed-no'}">${data.placed ? '✅ Placed' : '❌ Not Placed'}</div>
+                    <div class="label">Prediction</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" style="color:var(--accent-2)">${(data.placement_probability * 100).toFixed(1)}%</div>
+                    <div class="label">Probability</div>
+                </div>
+                <div class="stat-card ${riskCls}">
+                    <div class="value">${data.risk_level.toUpperCase()}</div>
+                    <div class="label">Risk Level</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" style="color:var(--green)">₹${data.predicted_package.toFixed(2)} LPA</div>
+                    <div class="label">Est. Package</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" style="color:var(--accent)">${(data.confidence * 100).toFixed(0)}%</div>
+                    <div class="label">Model Confidence</div>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        box.style.display = 'block';
+        box.innerHTML = `<div class="card" style="border-color:var(--red);color:var(--red);">Error: ${e.message}</div>`;
+    }
+    btn.disabled = false;
+    btn.innerHTML = '🔮 Predict Placement';
+}
+
+// ── Explain ────────────────────────────────────────────────────────
+async function doExplain() {
+    const btn = document.getElementById('btn-explain');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Explaining…';
+    try {
+        const data = await apiPost('/explain', getFormData());
+        showPage('explain');
+
+        const maxAbs = Math.max(...data.explanations.map(e => Math.abs(e.shap_value)), 0.001);
+        let shapHtml = data.explanations.map(e => {
+            const pct = (Math.abs(e.shap_value) / maxAbs * 45).toFixed(1);
+            const cls = e.impact === 'positive' ? 'positive' : 'negative';
+            const color = e.impact === 'positive' ? 'var(--green)' : 'var(--red)';
+            return `<div class="shap-bar">
+                <span class="feat-name">${e.display_name}</span>
+                <div class="bar-wrapper">
+                    <div class="center-line"></div>
+                    <div class="bar ${cls}" style="width:${pct}%;"></div>
+                </div>
+                <span class="val" style="color:${color}">${e.shap_value > 0 ? '+' : ''}${e.shap_value.toFixed(4)}</span>
+            </div>`;
+        }).join('');
+
+        const strengthsHtml = data.top_strengths.map(s => `<li style="color:var(--green);margin-bottom:.3rem;">${s}</li>`).join('');
+        const weakHtml = data.top_weaknesses.map(w => `<li style="color:var(--red);margin-bottom:.3rem;">${w}</li>`).join('');
+
+        document.getElementById('explain-result').innerHTML = `
+            <div class="result-grid">
+                <div class="stat-card">
+                    <div class="value ${data.placed ? 'placed-yes' : 'placed-no'}">${data.placed ? '✅ Placed' : '❌ Not Placed'}</div>
+                    <div class="label">Prediction</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" style="color:var(--accent-2)">${(data.placement_probability * 100).toFixed(1)}%</div>
+                    <div class="label">Probability</div>
+                </div>
+                <div class="stat-card risk-${data.risk_level}">
+                    <div class="value">${data.risk_level.toUpperCase()}</div>
+                    <div class="label">Risk</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-top:0;">SHAP Feature Impact</h2>
+                <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem;">
+                    Each bar shows how much a feature pushes the prediction towards (green) or away from (red) placement.
+                </p>
+                ${shapHtml}
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div class="card">
+                    <h2 style="margin-top:0;">💪 Strengths</h2>
+                    <ul style="list-style:none;padding:0;">${strengthsHtml || '<li style="color:var(--text-dim);">None identified</li>'}</ul>
+                </div>
+                <div class="card">
+                    <h2 style="margin-top:0;">⚠️ Weaknesses</h2>
+                    <ul style="list-style:none;padding:0;">${weakHtml || '<li style="color:var(--text-dim);">None identified</li>'}</ul>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        document.getElementById('explain-result').innerHTML = `<div class="card" style="border-color:var(--red);color:var(--red);">Error: ${e.message}</div>`;
+    }
+    btn.disabled = false; btn.innerHTML = '🔍 Explain with SHAP';
+}
+
+// ── Study Plan ─────────────────────────────────────────────────────
+async function doStudyPlan() {
+    const btn = document.getElementById('btn-plan');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating…';
+    try {
+        const data = await apiPost('/study-plan', getFormData());
+        showPage('plan');
+
+        let planHtml = data.plan_items.map(item => `
+            <div class="plan-item ${item.priority}">
+                <div class="pi-header">
+                    <span class="pi-title">${item.title}</span>
+                    <span class="pi-badge">${item.priority}</span>
+                </div>
+                <div class="pi-desc">${item.description}</div>
+                <div class="pi-meta">
+                    <span>📊 Current: <strong>${item.current_value}</strong></span>
+                    <span>🎯 Target: <strong>${item.target_value}</strong></span>
+                    <span>⏰ Week ${item.timeline_week}</span>
+                    <span>💡 Impact: ${item.estimated_impact.toFixed(3)}</span>
+                </div>
+            </div>
+        `).join('');
+
+        let tlHtml = data.weekly_milestones.map(m => `
+            <div class="tl-item ${m.is_checkpoint ? 'checkpoint' : ''}">
+                <div class="tl-week">Week ${m.week} — ${m.title} ${m.is_checkpoint ? '🏁' : ''}</div>
+                <div class="tl-tasks">${m.tasks.join(' • ')}</div>
+            </div>
+        `).join('');
+
+        document.getElementById('plan-result').innerHTML = `
+            <div class="card">
+                <h2 style="margin-top:0;">📊 Profile Summary</h2>
+                <div style="white-space:pre-line;font-size:.9rem;line-height:1.7;">${data.student_summary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-top:0;">📋 Action Items</h2>
+                ${planHtml || '<p style="color:var(--text-dim);">Your profile looks great! No major improvements needed.</p>'}
+            </div>
+
+            <div class="card">
+                <h2 style="margin-top:0;">📅 8-Week Timeline</h2>
+                <div class="timeline">${tlHtml}</div>
+            </div>
+        `;
+    } catch (e) {
+        document.getElementById('plan-result').innerHTML = `<div class="card" style="border-color:var(--red);color:var(--red);">Error: ${e.message}</div>`;
+    }
+    btn.disabled = false; btn.innerHTML = '📋 Get Study Plan';
+}
+
+// ── Chat ───────────────────────────────────────────────────────────
+async function sendChat(text) {
+    const inp = document.getElementById('chat-inp');
+    const msg = text || inp.value.trim();
+    if (!msg) return;
+    inp.value = '';
+
+    const msgs = document.getElementById('chat-messages');
+    msgs.innerHTML += `<div class="msg user">${escapeHtml(msg)}</div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+
+    try {
+        const body = { message: msg };
+        // Attach student context if form is filled
+        try { body.student_context = getFormData(); } catch(e) {}
+
+        const data = await apiPost('/chat', body);
+        msgs.innerHTML += `<div class="msg bot">${data.response.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>`;
+
+        const sugBox = document.getElementById('chat-suggestions');
+        if (data.suggestions && data.suggestions.length) {
+            sugBox.innerHTML = data.suggestions.map(s =>
+                `<button onclick="sendChat('${s.replace(/'/g, "\\'")}')">${s}</button>`
+            ).join('');
+        }
+    } catch(e) {
+        msgs.innerHTML += `<div class="msg bot" style="border:1px solid var(--red);">Error: ${e.message}</div>`;
+    }
+    msgs.scrollTop = msgs.scrollHeight;
+}
+
+function escapeHtml(t) {
+    return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Model Info ─────────────────────────────────────────────────────
+async function loadModelInfo() {
+    try {
+        const data = await apiGet('/model-info');
+        const cm = data.classification_metrics;
+        const rm = data.regression_metrics;
+
+        let fiHtml = data.feature_importances.map(fi => {
+            const pct = (fi.importance * 100 / (data.feature_importances[0]?.importance || 1)).toFixed(0);
+            return `<div class="fi-bar">
+                <span class="fi-name">${fi.display_name}</span>
+                <div style="flex:1;background:var(--surface);border-radius:4px;overflow:hidden;">
+                    <div class="fi-fill" style="width:${pct}%;"></div>
+                </div>
+                <span class="fi-val">${(fi.importance * 100).toFixed(1)}%</span>
+            </div>`;
+        }).join('');
+
+        document.getElementById('model-result').innerHTML = `
+            <div class="card">
+                <h2 style="margin-top:0;">Classification Model (Placement Yes/No)</h2>
+                <div class="metrics-grid">
+                    <div class="metric-chip"><div class="mv">${(cm.accuracy*100).toFixed(1)}%</div><div class="ml">Accuracy</div></div>
+                    <div class="metric-chip"><div class="mv">${(cm.precision*100).toFixed(1)}%</div><div class="ml">Precision</div></div>
+                    <div class="metric-chip"><div class="mv">${(cm.recall*100).toFixed(1)}%</div><div class="ml">Recall</div></div>
+                    <div class="metric-chip"><div class="mv">${(cm.f1*100).toFixed(1)}%</div><div class="ml">F1 Score</div></div>
+                    <div class="metric-chip"><div class="mv">${(cm.auc_roc*100).toFixed(1)}%</div><div class="ml">AUC-ROC</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-top:0;">Regression Model (Package LPA)</h2>
+                <div class="metrics-grid">
+                    <div class="metric-chip"><div class="mv">${rm.rmse.toFixed(2)}</div><div class="ml">RMSE</div></div>
+                    <div class="metric-chip"><div class="mv">${rm.mae.toFixed(2)}</div><div class="ml">MAE</div></div>
+                    <div class="metric-chip"><div class="mv">${(rm.r2*100).toFixed(1)}%</div><div class="ml">R² Score</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-top:0;">Global Feature Importance</h2>
+                <p style="color:var(--text-dim);font-size:.85rem;margin-bottom:1rem;">
+                    How much each feature contributes to the classification model's decisions overall.
+                </p>
+                ${fiHtml}
+            </div>
+        `;
+    } catch(e) {
+        document.getElementById('model-result').innerHTML = `<div class="card" style="border-color:var(--red);color:var(--red);">Error loading model info: ${e.message}<br><br>Make sure the AI service is running at ${API}</div>`;
+    }
+}
+</script>
+</body>
+</html>
