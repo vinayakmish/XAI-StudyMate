@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: xai-studymate-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/xai_studymate
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+
+# ── Application Config ──────────────────────────────────────────────
+app:
+  jwt:
+    secret: WGFpU3R1ZHlNYXRlU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb24yMDI2UHJvZA==
+    expiration-ms: 86400000   # 24 hours
+
+  ai-service:
+    base-url: http://localhost:5000
+
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:5173
+
+logging:
+  level:
+    com.xaistudymate: DEBUG
+    org.springframework.security: INFO

@@ -1,7 +1,9 @@
 # 🎓 XAI StudyMate — Explainable AI Student Placement Predictor
 
-An AI-powered, explainable student placement prediction system built with **FastAPI**, **Scikit-learn**, **SHAP**, and a modern dark-themed frontend. It predicts placement outcomes, explains decisions using SHAP analysis, and generates personalized 8-week study improvement plans.
+A full-stack, AI-powered student placement prediction system with **SHAP explainability**, personalized study plans, and an **admin dashboard** for monitoring at-risk students. Built with a modern microservice architecture.
 
+![Java](https://img.shields.io/badge/Java-21-red?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-green?logo=springboot)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green?logo=fastapi)
 ![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.8-orange?logo=scikitlearn)
@@ -19,79 +21,117 @@ An AI-powered, explainable student placement prediction system built with **Fast
 | 📋 **Personalized Study Plan** | AI-generated 8-week improvement roadmap with prioritized action items |
 | 💬 **AI Study Tutor** | Rule-based chatbot for placement preparation advice |
 | 📊 **Model Dashboard** | View classification/regression metrics and global feature importances |
-| 🌙 **Dark Theme UI** | Modern, responsive glassmorphism design with smooth animations |
+| 👑 **Admin Dashboard** | Monitor at-risk students, view analytics, contact students via email/phone |
+| 🔐 **JWT Authentication** | Secure login/register with role-based access (Student/Admin) |
+| 🌙 **Dark Theme UI** | Modern glassmorphism design with smooth animations and radial gauges |
 
 ## 🏗️ Architecture
 
 ```
 XAI-StudyMate/
 ├── Indian_Student_Placement_Dataset_2025.csv   # 12,000 student records
-├── test_api.py                                  # Endpoint smoke tests
-├── ai-service/                                  # FastAPI microservice
+├── ai-service/                                  # Python AI Microservice
 │   ├── requirements.txt
-│   ├── models/                                  # Trained model artifacts (auto-generated)
+│   ├── models/                                  # Trained model artifacts
 │   └── app/
 │       ├── model.py          # PlacementModel — train/load/predict
-│       ├── explainer.py      # SHAP TreeExplainer with domain-knowledge overrides
-│       ├── recommender.py    # Study plan generator with React Flow graph data
+│       ├── explainer.py      # SHAP TreeExplainer
+│       ├── recommender.py    # Study plan generator
 │       ├── schemas.py        # Pydantic request/response models
-│       └── main.py           # FastAPI app with 6 endpoints
+│       └── main.py           # FastAPI endpoints
+├── backend/                                     # Java Spring Boot Backend
+│   ├── pom.xml
+│   └── src/main/java/com/xaistudymate/backend/
+│       ├── config/           # Security, CORS, RestTemplate, DataSeeder
+│       ├── controller/       # Auth, Prediction, Chat, Admin, Dashboard
+│       ├── dto/              # Request/Response DTOs
+│       ├── entity/           # JPA entities (User, StudentProfile, etc.)
+│       ├── exception/        # Global exception handling
+│       ├── repository/       # Spring Data JPA repositories
+│       ├── security/         # JWT filter, provider, UserDetailsService
+│       └── service/          # Business logic + AI service client
 └── frontend/
     └── index.html            # Single-page app (vanilla HTML/CSS/JS)
+```
+
+```mermaid
+graph LR
+    A[Frontend :3000] --> B[Spring Boot :8080]
+    B --> C[H2/PostgreSQL]
+    B --> D[FastAPI AI Service :5000]
+    D --> E[ML Model + SHAP]
+    D --> F[Dataset CSV]
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.10+
-- pip
+- **Java 21+** and **Maven 3.9+**
+- **Python 3.10+** with pip
 
-### 1. Install Dependencies
+### 1. Install AI Service Dependencies
 ```bash
 cd ai-service
+python -m venv venv
+venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 ```
 
-### 2. Start the AI Backend (port 5000)
+### 2. Start the AI Service (port 5000)
 ```bash
 cd ai-service
-python -m uvicorn app.main:app --host 0.0.0.0 --port 5000
+venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 5000
 ```
-> On first run, the model trains automatically from the dataset (~2 seconds).  
-> Subsequent runs load pre-trained models instantly.
+> First run trains the model automatically (~2 seconds). Subsequent runs load instantly.
 
-### 3. Start the Frontend (port 3000)
-Open a **second terminal**:
+### 3. Start the Spring Boot Backend (port 8080)
+```bash
+cd backend
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+> Uses H2 in-memory database — no PostgreSQL installation needed for development.
+> An admin user is auto-seeded on startup.
+
+### 4. Start the Frontend (port 3000)
 ```bash
 cd frontend
 python -m http.server 3000
 ```
 
-### 4. Open in Browser
+### 5. Open in Browser
 Navigate to **http://localhost:3000**
+
+### Default Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| 👑 Admin | `admin@xaistudymate.com` | `admin123` |
+| 🎓 Student | Register a new account | Your choice |
 
 ## 📡 API Endpoints
 
+### Auth (Public)
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/health` | Liveness probe |
-| `GET` | `/model-info` | Model metrics & feature importances |
-| `POST` | `/predict` | Placement prediction |
-| `POST` | `/explain` | SHAP-based feature explanations |
-| `POST` | `/study-plan` | Personalized improvement plan |
-| `POST` | `/chat` | AI study tutor chat |
+| `POST` | `/api/auth/register` | Register new user |
+| `POST` | `/api/auth/login` | Login, get JWT |
+| `GET` | `/api/auth/me` | Get current user |
 
-### Example Request
-```bash
-curl -X POST http://localhost:5000/predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "gender": "Male", "age": 21, "degree": "BTech", "branch": "CS",
-    "cgpa": 7.5, "backlogs": 0, "internships": 1, "certifications": 2,
-    "coding_skills": 6, "communication_skills": 8,
-    "aptitude_score": 65, "projects": 2
-  }'
-```
+### Student (JWT Required)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/predict` | Placement prediction |
+| `POST` | `/api/explain` | SHAP-based explanations |
+| `POST` | `/api/study-plan` | Personalized study plan |
+| `POST` | `/api/chat` | AI study tutor |
+| `GET` | `/api/model-info` | Model metrics & importances |
+
+### Admin (JWT + Admin Role)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/admin/dashboard` | Overview stats + student list |
+| `GET` | `/api/admin/at-risk` | Students with <50% probability |
+| `GET` | `/api/admin/students/{id}/study-plan` | Student study plan detail |
 
 ## 🤖 ML Pipeline
 
@@ -105,21 +145,15 @@ curl -X POST http://localhost:5000/predict \
 2. **Aptitude Score** — 33.2% importance
 3. **CGPA** — 21.4% importance
 
-## 📸 Screenshots
-
-The application features a sleek dark-themed UI with:
-- **Predict Tab** — Input form with real-time placement prediction
-- **Explain Tab** — SHAP waterfall chart with strengths/weaknesses
-- **Study Plan Tab** — Prioritized action items + 8-week timeline
-- **AI Tutor Tab** — Interactive chat for placement prep advice
-- **Model Info Tab** — Performance metrics + feature importance bars
-
 ## 🛠️ Tech Stack
 
-- **Backend**: Python, FastAPI, Uvicorn
-- **ML**: Scikit-learn, SHAP, Pandas, NumPy
-- **Frontend**: Vanilla HTML/CSS/JS (no frameworks)
-- **Design**: Dark mode, glassmorphism, Inter font, CSS animations
+| Layer | Technology |
+|-------|-----------|
+| **AI Service** | Python, FastAPI, Scikit-learn, SHAP, Pandas |
+| **Backend** | Java 21, Spring Boot 3.3.5, Spring Security, JPA |
+| **Database** | H2 (dev) / PostgreSQL (prod) |
+| **Auth** | JWT (jjwt 0.12), BCrypt |
+| **Frontend** | Vanilla HTML/CSS/JS, Inter font, Glassmorphism |
 
 ## 📄 License
 

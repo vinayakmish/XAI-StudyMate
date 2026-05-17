@@ -30,5 +30,22 @@ desktop.ini
 .env
 *.log
 
+# Java / Maven
+backend/target/
+*.class
+*.jar
+*.war
+
+# Spring Boot
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+backend/data/
+
 # Temp
 verify_fix.py
+index_backup.html
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
