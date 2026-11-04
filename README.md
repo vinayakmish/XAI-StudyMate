@@ -149,6 +149,12 @@ The frontend is deployed to Vercel; Render runs the Spring Boot API, FastAPI AI 
 
 The Render blueprint uses free plans where available. Free web services may sleep when idle, and free databases may have limited lifetime/storage; check Render's current plan terms before storing real user data. The AI service trains the model on startup if no saved model artifacts are present, so its first start can take longer. If Render reports memory/resource limits or slow cold starts, upgrade the AI service's instance plan.
 
+### Optional demo student profiles
+
+The backend can seed ten fictional student accounts and academic profiles into its database for the admin student list. To opt in, set `APP_DEMO_DATA_ENABLED=true` on the backend service and redeploy. Seeding is idempotent and uses non-loginable random password hashes for the demo accounts. Set it back to `false` (or remove the variable) to disable future seeding. These are sample profiles only; prediction history is not fabricated.
+
+The separate [`ai-service/demo_student_training_samples.csv`](./ai-service/demo_student_training_samples.csv) file contains ten fictional labeled examples for experimentation. It is intentionally not merged into the production training dataset because synthetic labels could distort model evaluation.
+
 ### Default Credentials
 
 | Role | Email | Password |

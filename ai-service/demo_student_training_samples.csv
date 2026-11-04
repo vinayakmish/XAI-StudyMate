@@ -1,0 +1,11 @@
+student_id,gender,age,degree,branch,cgpa,backlogs,internships,certifications,coding_skills,communication_skills,aptitude_score,projects,placed,company_type,package_lpa
+demo-01,Male,21,BTech,Computer Science,8.6,0,2,4,8,7,82,3,1,Product,8.5
+demo-02,Female,22,BE,Information Technology,9.1,0,3,5,9,8,91,4,1,Product,10.2
+demo-03,Male,21,BTech,Electronics,7.2,1,1,2,6,7,68,2,0,None,0.0
+demo-04,Female,20,BSc,Computer Science,8.0,0,1,3,7,9,77,3,1,Service,5.8
+demo-05,Male,23,BE,Mechanical,6.8,2,0,1,5,6,61,1,0,None,0.0
+demo-06,Female,21,BTech,Electrical,8.8,0,2,4,8,9,88,4,1,Product,9.1
+demo-07,Male,22,BTech,Information Technology,7.7,0,2,3,7,6,73,2,1,Service,6.2
+demo-08,Female,20,BE,Computer Science,9.4,0,3,6,10,9,95,5,1,Product,12.0
+demo-09,Male,21,BCA,Computer Applications,7.0,1,1,2,6,7,65,2,0,None,0.0
+demo-10,Female,22,BTech,Electronics,8.3,0,2,3,8,8,84,3,1,Service,7.4
