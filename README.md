@@ -6,6 +6,8 @@ A full-stack, AI-powered student placement prediction system with **SHAP explain
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-green?logo=springboot)
 ![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green?logo=fastapi)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
 ![Scikit-learn](https://img.shields.io/badge/Scikit--learn-1.8-orange?logo=scikitlearn)
 ![SHAP](https://img.shields.io/badge/SHAP-0.51-red)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
@@ -50,8 +52,19 @@ XAI-StudyMate/
 │       ├── repository/       # Spring Data JPA repositories
 │       ├── security/         # JWT filter, provider, UserDetailsService
 │       └── service/          # Business logic + AI service client
-└── frontend/
-    └── index.html            # Single-page app (vanilla HTML/CSS/JS)
+├── frontend/                                    # React single-page application
+│   ├── index.html              # Vite HTML entry point
+│   ├── vite.config.js          # React plugin, dev server, and API proxy
+│   ├── package.json
+│   └── src/
+│       ├── main.jsx            # React application entry point
+│       ├── App.jsx             # Application routes and layout
+│       ├── api.js              # Backend API client
+│       ├── index.css           # Global styles
+│       ├── components/         # Shared React components
+│       └── pages/              # Landing, student, and admin pages
+├── package.json                                 # Root convenience scripts
+└── README.md
 ```
 
 ```mermaid
@@ -68,38 +81,54 @@ graph LR
 ### Prerequisites
 - **Java 21+** and **Maven 3.9+**
 - **Python 3.10+** with pip
+- **Node.js 20+** and npm
 
-### 1. Install AI Service Dependencies
+### 1. Install the frontend dependencies
 ```bash
-cd ai-service
-python -m venv venv
-venv\Scripts\activate   # Windows
-pip install -r requirements.txt
+npm run install:frontend
 ```
 
-### 2. Start the AI Service (port 5000)
+### 2. Set up the AI service (Windows)
+From the repository root, create its virtual environment and install dependencies:
+```powershell
+cd ai-service
+python -m venv venv
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+cd ..
+```
+
+### 3. Start the application (Windows)
+From the repository root, start the AI service, Spring Boot backend, and Vite frontend together:
+```bash
+npm start
+```
+
+The frontend is served at **http://localhost:3000**. Vite proxies `/api` requests to the backend at port 8080. The backend calls the AI service on port 5000.
+
+> The combined `npm start` script uses the Windows virtual-environment path `ai-service/venv/Scripts/python.exe`. For other operating systems, start the AI service with its virtual-environment Python and Uvicorn, the backend with the Maven command below, and the frontend with `npm --prefix frontend run dev` in separate terminals.
+
+The services can also be started separately:
+
+**AI service (port 5000)**
 ```bash
 cd ai-service
-venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 5000
+venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 5000
 ```
 > First run trains the model automatically (~2 seconds). Subsequent runs load instantly.
 
-### 3. Start the Spring Boot Backend (port 8080)
+**Spring Boot backend (port 8080)**
 ```bash
 cd backend
 mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
-> Uses H2 in-memory database — no PostgreSQL installation needed for development.
-> An admin user is auto-seeded on startup.
+> Uses H2 in-memory database — no PostgreSQL installation needed for development. An admin user is auto-seeded on startup.
 
-### 4. Start the Frontend (port 3000)
+**React frontend (port 3000)**
 ```bash
-cd frontend
-python -m http.server 3000
+npm --prefix frontend run dev
 ```
 
-### 5. Open in Browser
-Navigate to **http://localhost:3000**
+Open **http://localhost:3000** in your browser.
 
 ### Default Credentials
 
@@ -153,7 +182,7 @@ Navigate to **http://localhost:3000**
 | **Backend** | Java 21, Spring Boot 3.3.5, Spring Security, JPA |
 | **Database** | H2 (dev) / PostgreSQL (prod) |
 | **Auth** | JWT (jjwt 0.12), BCrypt |
-| **Frontend** | Vanilla HTML/CSS/JS, Inter font, Glassmorphism |
+| **Frontend** | React 19, Vite 6, JavaScript, CSS, Inter font, Glassmorphism |
 
 ## 📄 License
 
