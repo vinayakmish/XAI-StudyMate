@@ -142,6 +142,8 @@ The frontend is deployed to Vercel; Render runs the Spring Boot API, FastAPI AI 
 2. **Create the Render services.** In Render, create a Blueprint from this repository and use the root `render.yaml`. It defines the AI service, backend, and PostgreSQL database. When prompted, set:
    - `APP_JWT_SECRET`: generate a unique Base64 secret (the backend expects Base64), for example with `python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(48)).decode())"`.
    - `APP_CORS_ALLOWED_ORIGINS`: the exact Vercel site origin, such as `https://your-project.vercel.app` (no trailing slash).
+   - `SPRING_DATASOURCE_URL`: use the Render database's internal host, port, and database name to form `jdbc:postgresql://<internal-host>:<port>/<database-name>`. The username and password are linked from the Render database.
+   - `APP_AI_SERVICE_BASE_URL`: the AI web service's Render URL, without a path such as `/health`.
 3. **Connect Vercel to the backend.** In Vercel project settings, add `VITE_API_BASE_URL` with the Render backend's public URL, for example `https://your-backend.onrender.com` (do not append `/api`), then redeploy.
 4. **Verify the services.** Open `https://your-ai-service.onrender.com/health`, then test sign-in and prediction on the Vercel site.
 
