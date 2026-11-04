@@ -34,6 +34,7 @@ XAI-StudyMate/
 ├── Indian_Student_Placement_Dataset_2025.csv   # 12,000 student records
 ├── ai-service/                                  # Python AI Microservice
 │   ├── requirements.txt
+│   ├── Dockerfile
 │   ├── models/                                  # Trained model artifacts
 │   └── app/
 │       ├── model.py          # PlacementModel — train/load/predict
@@ -43,6 +44,7 @@ XAI-StudyMate/
 │       └── main.py           # FastAPI endpoints
 ├── backend/                                     # Java Spring Boot Backend
 │   ├── pom.xml
+│   ├── Dockerfile
 │   └── src/main/java/com/xaistudymate/backend/
 │       ├── config/           # Security, CORS, RestTemplate, DataSeeder
 │       ├── controller/       # Auth, Prediction, Chat, Admin, Dashboard
@@ -56,14 +58,16 @@ XAI-StudyMate/
 │   ├── index.html              # Vite HTML entry point
 │   ├── vite.config.js          # React plugin, dev server, and API proxy
 │   ├── package.json
-│   └── src/
-│       ├── main.jsx            # React application entry point
-│       ├── App.jsx             # Application routes and layout
-│       ├── api.js              # Backend API client
-│       ├── index.css           # Global styles
-│       ├── components/         # Shared React components
-│       └── pages/              # Landing, student, and admin pages
+│   ├── src/
+│   │   ├── main.jsx            # React application entry point
+│   │   ├── App.jsx             # Application routes and layout
+│   │   ├── api.js              # Backend API client
+│   │   ├── index.css           # Global styles
+│   │   ├── components/         # Shared React components
+│   │   └── pages/              # Landing, student, and admin pages
+│   └── vercel.json             # SPA route fallback for Vercel
 ├── package.json                                 # Root convenience scripts
+├── render.yaml                                   # Render services and database
 └── README.md
 ```
 
@@ -129,6 +133,19 @@ npm --prefix frontend run dev
 ```
 
 Open **http://localhost:3000** in your browser.
+
+## ☁️ Deploying with Vercel + Render
+
+The frontend is deployed to Vercel; Render runs the Spring Boot API, FastAPI AI service, and PostgreSQL database.
+
+1. **Deploy the frontend on Vercel.** Import this GitHub repository, set the project root to `frontend`, and deploy with the Vite defaults (`npm run build`, output directory `dist`). Note the Vercel site URL.
+2. **Create the Render services.** In Render, create a Blueprint from this repository and use the root `render.yaml`. It defines the AI service, backend, and PostgreSQL database. When prompted, set:
+   - `APP_JWT_SECRET`: generate a unique Base64 secret (the backend expects Base64), for example with `python -c "import secrets,base64; print(base64.b64encode(secrets.token_bytes(48)).decode())"`.
+   - `APP_CORS_ALLOWED_ORIGINS`: the exact Vercel site origin, such as `https://your-project.vercel.app` (no trailing slash).
+3. **Connect Vercel to the backend.** In Vercel project settings, add `VITE_API_BASE_URL` with the Render backend's public URL, for example `https://your-backend.onrender.com` (do not append `/api`), then redeploy.
+4. **Verify the services.** Open `https://your-ai-service.onrender.com/health`, then test sign-in and prediction on the Vercel site.
+
+The Render blueprint uses free plans where available. Free web services may sleep when idle, and free databases may have limited lifetime/storage; check Render's current plan terms before storing real user data. The AI service trains the model on startup if no saved model artifacts are present, so its first start can take longer. If Render reports memory/resource limits or slow cold starts, upgrade the AI service's instance plan.
 
 ### Default Credentials
 

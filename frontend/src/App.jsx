@@ -11,6 +11,7 @@ import AdminOverview from './pages/AdminOverview';
 import AdminStudents from './pages/AdminStudents';
 import AdminStudentDetail from './pages/AdminStudentDetail';
 import ModelInfo from './pages/ModelInfo';
+import { API_URL } from './api';
 
 export const AppContext = createContext();
 export function useApp() { return useContext(AppContext); }
@@ -44,7 +45,7 @@ export default function App() {
     localStorage.setItem('xai_token', tokenStr);
     // Fetch full profile (includes profilePicture) using the new token
     try {
-      const res = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + tokenStr } });
+      const res = await fetch(`${API_URL}/auth/me`, { headers: { 'Authorization': 'Bearer ' + tokenStr } });
       if (res.ok) {
         const full = await res.json();
         userData = { ...userData, profilePicture: full.profilePicture, university: full.university, yearOfStudy: full.yearOfStudy, bio: full.bio };

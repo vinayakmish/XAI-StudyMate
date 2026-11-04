@@ -3,9 +3,9 @@ spring:
     name: xai-studymate-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/xai_studymate
-    username: postgres
-    password: postgres
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/xai_studymate}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,19 +22,19 @@ spring:
     default-property-inclusion: non_null
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 # ── Application Config ──────────────────────────────────────────────
 app:
   jwt:
-    secret: WGFpU3R1ZHlNYXRlU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb24yMDI2UHJvZA==
+    secret: ${APP_JWT_SECRET}
     expiration-ms: 86400000   # 24 hours
 
   ai-service:
-    base-url: http://localhost:5000
+    base-url: ${APP_AI_SERVICE_BASE_URL:http://localhost:5000}
 
   cors:
-    allowed-origins: http://localhost:3000,http://localhost:5173
+    allowed-origins: "${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}"
 
 logging:
   level:

@@ -1,4 +1,5 @@
-const API = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '');
+export const API_URL = API_BASE_URL ? `${API_BASE_URL}/api` : '/api';
 
 function authHeaders() {
   const h = { 'Content-Type': 'application/json' };
@@ -35,21 +36,21 @@ async function parseError(res) {
 }
 
 export async function apiPost(path, body) {
-  const res = await fetch(API + path, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+  const res = await fetch(API_URL + path, { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
   handleAuthError(res);
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }
 
 export async function apiGet(path) {
-  const res = await fetch(API + path, { headers: authHeaders() });
+  const res = await fetch(API_URL + path, { headers: authHeaders() });
   handleAuthError(res);
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
 }
 
 export async function apiPut(path, body) {
-  const res = await fetch(API + path, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
+  const res = await fetch(API_URL + path, { method: 'PUT', headers: authHeaders(), body: JSON.stringify(body) });
   handleAuthError(res);
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();
