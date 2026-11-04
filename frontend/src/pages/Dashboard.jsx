@@ -34,6 +34,15 @@ function inputsMatch(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+function isValidPrediction(result) {
+  return result &&
+    typeof result.placement_probability === 'number' &&
+    typeof result.predicted_package === 'number' &&
+    typeof result.confidence === 'number' &&
+    typeof result.risk_level === 'string' &&
+    typeof result.placed === 'boolean';
+}
+
 export default function Dashboard() {
   const { analysisData, setAnalysisData, setPage, user } = useApp();
 
@@ -57,7 +66,7 @@ export default function Dashboard() {
   useEffect(() => {
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-      if (cached && cached.userId === user?.userId && cached.data?.predict) {
+      if (cached && cached.userId === user?.userId && isValidPrediction(cached.data?.predict)) {
         setAnalysisData(cached.data);
         setResult(cached.data.predict);
         setCacheUsed(true);
@@ -73,7 +82,7 @@ export default function Dashboard() {
     // Check if inputs match cached inputs — if so, show cached results
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
-      if (cached && cached.userId === user?.userId && inputsMatch(cached.formData, fd) && cached.data?.predict) {
+      if (cached && cached.userId === user?.userId && inputsMatch(cached.formData, fd) && isValidPrediction(cached.data?.predict)) {
         setAnalysisData(cached.data);
         setResult(cached.data.predict);
         setCacheUsed(true);

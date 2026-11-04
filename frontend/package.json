@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start:ai": "cd ../ai-service && python -m uvicorn app.main:app --port 5000",
+    "start:ai": "cd ../ai-service && venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 5000",
     "start:backend": "cd ../backend && mvn spring-boot:run \"-Dspring-boot.run.profiles=dev\"",
     "start:frontend": "vite",
     "start": "concurrently -n AI,BACKEND,FRONTEND -c cyan,yellow,green \"npm run start:ai\" \"npm run start:backend\" \"npm run start:frontend\""
